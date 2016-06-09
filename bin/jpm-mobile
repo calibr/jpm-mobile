@@ -5,6 +5,7 @@ var program = require("commander");
 var VERSION = require("../package.json").version;
 var run = require("../lib/run").run;
 var cwd = process.cwd();
+var fs = require("fs");
 
 program
   .version(VERSION)
@@ -23,8 +24,22 @@ program
   .command("run")
   .description("Install and run the current addon in Firefox for Mobile.")
   .action(function () {
-    var manifest = require(path.join(cwd, "package.json"));
-    run(manifest, makeOptions(program, "run")).then(null, console.error);
+    var packagePath = path.join(cwd, "package.json");
+    var stat = null;
+    try {
+      stat = fs.statSync(packagePath);
+    }
+    catch(ex) {
+    }
+    var manifest = null;
+    if(stat) {
+      manifest = require(packagePath);
+    }
+    var p = run(manifest, makeOptions(program, "run"));
+    p.then(function() {
+      console.log("DONE");
+    });
+    p.catch(console.error.bind(console));
   });
 
 program
@@ -32,7 +47,11 @@ program
   .description("Install, run, and test the current addon in Firefox for Mobile.")
   .action(function () {
     var manifest = require(path.join(cwd, "package.json"))
-    run(manifest, makeOptions(program, "test")).then(null, console.error);
+    var p = run(manifest, makeOptions(program, "test"));
+    p.then(function() {
+      console.log("DONE");
+    });
+    p.catch(console.error.bind(console));
   });
 
 function makeOptions(program, command) {
@@ -47,7 +66,7 @@ function makeOptions(program, command) {
 program.parse(process.argv);
 
 // If no command (run, xpi, init, etc.) specified, display basic help
-if (cmd.isEmptyCommand(program)) {
-  program.help();
-}
+//if (cmd.isEmptyCommand(program)) {
+//  program.help();
+//}
 
